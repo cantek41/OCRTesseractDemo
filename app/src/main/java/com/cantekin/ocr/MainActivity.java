@@ -15,13 +15,14 @@ import java.io.IOException;
 
 public class MainActivity extends AppCompatActivity {
     private static final int REQUEST_CAMERA = 10001;
+    private static final int REQUEST_GALERY = 10002;
     private MyTessOCR mTessOCR;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        mTessOCR = new MyTessOCR(MainActivity.this);
+
         Button btn=(Button) findViewById(R.id.button);
         btn.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -29,6 +30,14 @@ public class MainActivity extends AppCompatActivity {
                 Intent intent = new Intent();
                 intent.setType("image/*");
                 intent.setAction(Intent.ACTION_GET_CONTENT);//
+                startActivityForResult(intent, REQUEST_GALERY);
+            }
+        });
+        Button btn2=(Button) findViewById(R.id.button2);
+        btn2.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
                 startActivityForResult(intent, REQUEST_CAMERA);
             }
         });
@@ -38,9 +47,11 @@ public class MainActivity extends AppCompatActivity {
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent intent) {
         Log.w("onActivityResult","onActivityResult");
+        TextView t = (TextView) findViewById(R.id.textData);
+        mTessOCR = new MyTessOCR(MainActivity.this);
         if (resultCode == RESULT_OK)
             switch (requestCode) {
-                case REQUEST_CAMERA:
+                case REQUEST_GALERY:
                     Uri selectedImage = intent.getData();
                     Bitmap bitmap=null;
                     try {
@@ -48,15 +59,24 @@ public class MainActivity extends AppCompatActivity {
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
-
                     String temp = mTessOCR.getOCRResult(bitmap);
                     Log.w("okunan",temp);
-                    TextView t = (TextView) findViewById(R.id.textData);
                     t.setText(temp);
+                    bitmap=null;
+                    break;
+                case REQUEST_CAMERA:
+                    Bitmap photo = (Bitmap) intent.getExtras().get("data");
+                    String txt = mTessOCR.getOCRResult(photo);
+                    photo=null;
+                    Log.w("okunan",txt);
+                    t.setText(txt);
                     break;
                 default:
                     break;
             }
+
+        mTessOCR.onDestroy();
+        System.gc();
     }
 }
 
